@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buckling & BPX Evolution — Kataria (2024) + Kataria & Shen (2022)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #08090d;
+    --panel-bg: #0f1117;
+    --border: #1a1e2a;
+    --border-hover: #252b3a;
+    --text: #b8bfc9;
+    --text-dim: #5c6370;
+    --text-bright: #e2e6ed;
+    --accent1: #f0a030;
+    --accent2: #4a90e2;
+    --buckle1: #e5534b;
+    --buckle2: #8957e5;
+    --bpx: #39d353;
+    --sigma: #db61a2;
+    --grid: #151921;
+    --phase1-bg: rgba(229,83,75,0.05);
+    --phase2-bg: rgba(137,87,229,0.05);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    min-height: 100vh;
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .container {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  header {
+    padding: 44px 0 20px;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--accent1);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tag::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--accent1);
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-bright);
+    line-height: 1.35;
+    margin-bottom: 10px;
+    letter-spacing: -0.3px;
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-weight: 300;
+    max-width: 660px;
+    line-height: 1.65;
+  }
+
+  /* Legend */
+  .legend-row {
+    display: flex;
+    gap: 24px;
+    padding: 14px 0 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .leg {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .swatch { width: 20px; height: 2px; border-radius: 1px; }
+  .swatch.dash { background: repeating-linear-gradient(90deg, var(--buckle1) 0, var(--buckle1) 5px, transparent 5px, transparent 9px); height: 2px; }
+  .swatch.dot { background: repeating-linear-gradient(90deg, var(--buckle2) 0, var(--buckle2) 2px, transparent 2px, transparent 6px); height: 2px; }
+
+  .phase-tag {
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+  }
+  .phase-tag.g { background: rgba(74,144,226,0.12); color: #6cb0f0; }
+  .phase-tag.b1 { background: rgba(229,83,75,0.12); color: #f07068; }
+  .phase-tag.b2 { background: rgba(137,87,229,0.12); color: #a88af0; }
+  .phase-tag.s { background: rgba(240,160,48,0.12); color: #f0c060; }
+
+  /* Charts */
+  .panels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-bottom: 24px;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 20px 10px;
+    position: relative;
+    transition: border-color 0.25s;
+  }
+
+  .panel:hover { border-color: var(--border-hover); }
+
+  .panel.highlight-bpx {
+    border-color: rgba(57, 211, 83, 0.25);
+    box-shadow: 0 0 20px rgba(57, 211, 83, 0.04);
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .panel-ylabel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .panel-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  canvas { width: 100%; display: block; cursor: crosshair; }
+
+  /* BPX Annotation callout */
+  .bpx-callout {
+    position: absolute;
+    right: 24px;
+    top: 14px;
+    display: flex;
+    gap: 14px;
+    pointer-events: none;
+  }
+
+  .bpx-phase {
+    text-align: center;
+  }
+
+  .bpx-phase .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--bpx);
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+
+  .bpx-phase .lab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  /* Info section */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    padding-bottom: 20px;
+  }
+
+  .card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .card.c-b1::before { background: var(--buckle1); }
+  .card.c-b2::before { background: var(--buckle2); }
+  .card.c-bpx::before { background: var(--bpx); }
+  .card.c-key::before { background: var(--accent2); }
+
+  .card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-bright);
+    margin-bottom: 10px;
+  }
+
+  .card .big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--text-bright);
+    margin-bottom: 2px;
+  }
+
+  .card .sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .card .body {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .card .body strong { color: var(--text); font-weight: 400; }
+
+  /* BPX mechanism breakdown */
+  .mech-table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+  }
+
+  .mech-table td {
+    padding: 6px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .mech-table td:first-child { color: var(--text); width: 35%; }
+  .mech-table tr:last-child td { border-bottom: none; }
+
+  .mech-bar {
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 4px;
+  }
+
+  /* Tooltip */
+  .tt {
+    position: fixed;
+    background: #161a24;
+    border: 1px solid #2a2f3d;
+    border-radius: 5px;
+    padding: 9px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    z-index: 50;
+    line-height: 1.6;
+  }
+  .tt.on { opacity: 1; }
+
+  /* Crosshair */
+  .crosshair {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  footer {
+    padding: 20px 0 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 700px) {
+    .container { padding: 0 16px; }
+    header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<div class="container">
+
+<header>
+  <div class="tag">N-body Simulation · Milky Way-type Disc · 10 Gyr</div>
+  <h1>Buckling & BPX Strength: Time Evolution of Bar Properties</h1>
+  <p>Five-panel diagnostic: bar strength, pattern speed, buckling amplitude, σ<sub>z</sub>/σ<sub>R</sub>, and boxy/peanut strength — tracing how successive buckling events build the BPX morphology through three distinct thickening mechanisms.</p>
+</header>
+
+<div class="legend-row">
+  <div class="leg"><div class="swatch dash"></div>1st Buckle ≈ 1.45 Gyr</div>
+  <div class="leg"><div class="swatch dot"></div>2nd Buckle ≈ 2.68 Gyr</div>
+  <span class="phase-tag g">Growth</span>
+  <span class="phase-tag b1">Buckle 1</span>
+  <span class="phase-tag b2">Buckle 2</span>
+  <span class="phase-tag s">Secular</span>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-ylabel">A₂/A₀ — Bar Strength</span>
+      <span class="panel-num">PANEL 1</span>
+    </div>
+    <canvas id="c1" height="120"></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-ylabel">Ω<sub>p</sub> (km s⁻¹ kpc⁻¹) — Pattern Speed</span>
+      <span class="panel-num">PANEL 2</span>
+    </div>
+    <canvas id="c2" height="120"></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-ylabel">A<sub>Buckle</sub> — Buckling Amplitude</span>
+      <span class="panel-num">PANEL 3</span>
+    </div>
+    <canvas id="c3" height="120"></canvas>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-ylabel">σ<sub>z</sub> / σ<sub>R</sub> (r &lt; 2R<sub>d</sub>)</span>
+      <span class="panel-num">PANEL 4</span>
+    </div>
+    <canvas id="c4" height="120"></canvas>
+  </div>
+
+  <div class="panel highlight-bpx">
+    <div class="panel-head">
+      <span class="panel-ylabel" style="color:var(--bpx)">A<sub>BPX</sub> (kpc) — Boxy/Peanut Strength</span>
+      <span class="panel-num">PANEL 5 · NEW</span>
+    </div>
+    <canvas id="c5" height="150"></canvas>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="card c-b1">
+    <h3>1st Buckling</h3>
+    <div class="big">220 Myr</div>
+    <div class="sub">1.32 – 1.54 Gyr · r &lt; 3 kpc</div>
+    <div class="body">
+      Abrupt σ<sub>z</sub>/σ<sub>R</sub> jump <strong>0.65 → 0.77</strong>. Sharp dip in σ<sub>x</sub>.
+      Produces <strong>steep A<sub>BPX</sub> rise</strong> (Phase I).
+      BPX full length ≈ <strong>5.8 kpc</strong> (⅔ of 9 kpc bar).
+      Compact symmetric quadrupolar V<sub>z</sub> patterns.
+    </div>
+  </div>
+
+  <div class="card c-b2">
+    <h3>2nd Buckling</h3>
+    <div class="big">~1 Gyr</div>
+    <div class="sub">2.0 – 3.01 Gyr · r ≈ 6 kpc</div>
+    <div class="body">
+      Slower σ<sub>z</sub>/σ<sub>R</sub> rise <strong>0.68 → 0.72</strong>. ~30% stronger bending mode.
+      Drives <strong>intermediate A<sub>BPX</sub> growth</strong> (Phase II).
+      BPX full length ≈ <strong>8.6 kpc</strong> (⅔ of 13 kpc bar).
+      Extended asymmetric V<sub>z</sub> patterns.
+    </div>
+  </div>
+
+  <div class="card c-bpx">
+    <h3>BPX Thickening Mechanisms</h3>
+    <div class="big">3 Phases</div>
+    <div class="sub">Sellwood & Gerhard (2020) · Kataria & Shen (2022)</div>
+    <table class="mech-table">
+      <tr>
+        <td>Phase I<br><span style="color:var(--buckle1)">Buckling</span></td>
+        <td>Steep A<sub>BPX</sub> jump. Violent vertical bending transfers planar → vertical energy instantly.
+          <div class="mech-bar" style="width:95%;background:var(--buckle1)"></div>
+        </td>
+      </tr>
+      <tr>
+        <td>Phase II<br><span style="color:var(--buckle2)">2:1 Heating</span></td>
+        <td>Intermediate slope. Bar orbits heated passing through vertical 2:1 resonance. Includes 2nd buckling.
+          <div class="mech-bar" style="width:60%;background:var(--buckle2)"></div>
+        </td>
+      </tr>
+      <tr>
+        <td>Phase III<br><span style="color:var(--accent1)">Orbit Trapping</span></td>
+        <td>Gradual growth. Resonance sweeps outward, trapping new orbits into vertically extended families.
+          <div class="mech-bar" style="width:30%;background:var(--accent1)"></div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card c-key">
+    <h3>BPX ≠ Buckling Only</h3>
+    <div class="big">~20%</div>
+    <div class="sub">Higher A<sub>BPX</sub> in high-spin halos (S075 vs S000)</div>
+    <div class="body">
+      A<sub>BPX</sub> continues growing <strong>long after buckling ends</strong>. In secular evolution,
+      resonant heating &amp; orbit trapping steadily build the peanut shape.
+      Face-on bar evolves from <strong>rectangular → farfalle</strong> with increasing halo spin.
+      Counterrotating halos suppress the peanut in face-on profiles.
+    </div>
+  </div>
+</div>
+
+<footer>
+  Data reconstructed from Kataria (2024) MNRAS 534, 3565 — Fig. 1 · Kataria &amp; Shen (2022) ApJ 940, 175 — Fig. 3<br>
+  Simulation: GAlIC + GADGET-2 · 10⁶ disc + 10⁶ halo particles · M<sub>tot</sub> = 6.38 × 10¹¹ M☉ · R<sub>d</sub> = 2.9 kpc · R<sub>vir</sub> = 140 kpc
+</footer>
+
+</div>
+
+<div class="tt" id="tt"></div>
+
+<script>
+const DPR = window.devicePixelRatio || 1;
+const B1_T = 1.45, B2_T = 2.68;
+const B1_START = 1.32, B1_END = 1.54;
+const B2_START = 2.0, B2_END = 3.01;
+
+// ============================================================
+// DATA GENERATORS (reconstructed from published figures)
+// ============================================================
+
+function genSmooth(rawPts, jitter=0) {
+  const out = [];
+  for (let t = rawPts[0][0]; t <= rawPts[rawPts.length-1][0]; t += 0.015) {
+    // Linear interpolation between nearest raw points
+    let i = 0;
+    while (i < rawPts.length - 1 && rawPts[i+1][0] < t) i++;
+    if (i >= rawPts.length - 1) { out.push({t, v: rawPts[rawPts.length-1][1]}); continue; }
+    const [t0,v0] = rawPts[i], [t1,v1] = rawPts[i+1];
+    const frac = (t - t0) / (t1 - t0);
+    let v = v0 + frac * (v1 - v0);
+    if (jitter) v += (Math.random()-0.5) * jitter;
+    out.push({t, v});
+  }
+  return out;
+}
+
+const dataA2 = genSmooth([
+  [0,0.02],[0.3,0.05],[0.8,0.25],[1.1,0.45],[1.3,0.60],[1.43,0.64],
+  [1.46,0.48],[1.50,0.40],[1.6,0.42],[1.8,0.50],[2.0,0.55],[2.2,0.60],
+  [2.5,0.60],[2.7,0.59],[3.0,0.60],[3.2,0.61],[4.0,0.65],[5.0,0.70],
+  [6.0,0.72],[7.0,0.74],[8.0,0.75],[9.0,0.755],[9.78,0.76]
+], 0.005);
+
+const dataOmega = genSmooth([
+  [1.0,45],[1.3,43],[1.43,43],[1.46,38],[1.55,36],[2.0,34],
+  [2.5,32],[3.0,30],[4.0,27],[5.0,24],[6.0,21],[7.0,18],
+  [8.0,15],[9.0,13],[9.78,11]
+], 0.3);
+
+// Buckling amplitude with two Gaussian peaks
+function genBuckle() {
+  const out = [];
+  for (let t = 0; t <= 9.8; t += 0.015) {
+    const g1 = 0.135 * Math.exp(-0.5*((t-1.45)/0.07)**2);
+    const g2 = 0.105 * Math.exp(-0.5*((t-2.68)/0.22)**2);
+    let sec = 0;
+    if (t > 3.5) sec = 0.015 * Math.exp(-(t-3.5)*0.2) * Math.abs(Math.sin(t*3));
+    let v = 0.008 + g1 + g2 + sec + (Math.random()-0.5)*0.002;
+    out.push({t, v: Math.max(0, v)});
+  }
+  return out;
+}
+const dataBuckle = genBuckle();
+
+const dataSigma = genSmooth([
+  [0,0.85],[0.3,0.84],[0.6,0.80],[0.9,0.73],[1.1,0.68],[1.3,0.65],
+  [1.45,0.66],[1.50,0.77],[1.6,0.76],[1.8,0.74],[2.0,0.72],[2.3,0.70],
+  [2.5,0.68],[2.68,0.69],[2.80,0.72],[3.0,0.71],[3.5,0.70],
+  [4.0,0.69],[5.0,0.67],[6.0,0.66],[7.0,0.655],[8.0,0.65],
+  [9.0,0.645],[9.78,0.64]
+], 0.003);
+
+// BPX Strength — the key new panel
+// Three distinct growth phases visible in slope
+const dataBPX = genSmooth([
+  [0,0.58],[0.3,0.58],[0.6,0.59],[0.9,0.60],[1.1,0.62],[1.3,0.64],
+  // Phase I: steep jump during 1st buckling
+  [1.40,0.68],[1.45,0.90],[1.50,1.02],[1.55,1.05],
+  // Phase II: intermediate growth (2nd buckling + resonant heating)
+  [1.8,1.10],[2.0,1.14],[2.2,1.17],[2.5,1.22],[2.68,1.28],
+  [2.8,1.32],[3.0,1.36],[3.2,1.38],
+  // Phase III: gradual secular growth (orbit trapping)
+  [3.5,1.40],[4.0,1.43],[4.5,1.45],[5.0,1.47],[5.5,1.49],
+  [6.0,1.51],[6.5,1.52],[7.0,1.53],[7.5,1.545],[8.0,1.55],
+  [8.5,1.56],[9.0,1.565],[9.5,1.57],[9.78,1.575]
+], 0.004);
+
+// ============================================================
+// DRAW ENGINE
+// ============================================================
+
+function setupCanvas(id) {
+  const c = document.getElementById(id);
+  const r = c.getBoundingClientRect();
+  c.width = r.width * DPR;
+  c.height = r.height * DPR;
+  const ctx = c.getContext('2d');
+  ctx.scale(DPR, DPR);
+  return {c, ctx, W: r.width, H: r.height};
+}
+
+const allCharts = [];
+
+function draw({id, data, yRange, color, hlines, annotations}) {
+  const {c, ctx, W, H} = setupCanvas(id);
+  const M = {t:8, r:14, b:26, l:48};
+  const pW = W - M.l - M.r, pH = H - M.t - M.b;
+  const [yMin, yMax] = yRange;
+  const tMin = 0, tMax = 10;
+
+  const X = t => M.l + (t-tMin)/(tMax-tMin)*pW;
+  const Y = v => M.t + (1-(v-yMin)/(yMax-yMin))*pH;
+
+  // Grid
+  ctx.strokeStyle = '#13171f'; ctx.lineWidth = 0.5;
+  for (let t=0; t<=10; t+=2) { ctx.beginPath(); ctx.moveTo(X(t),M.t); ctx.lineTo(X(t),M.t+pH); ctx.stroke(); }
+  for (let i=0; i<=4; i++) { const v=yMin+(yMax-yMin)*i/4; ctx.beginPath(); ctx.moveTo(M.l,Y(v)); ctx.lineTo(M.l+pW,Y(v)); ctx.stroke(); }
+
+  // Buckling shaded regions
+  ctx.fillStyle = 'rgba(229,83,75,0.04)';
+  ctx.fillRect(X(B1_START), M.t, X(B1_END)-X(B1_START), pH);
+  ctx.fillStyle = 'rgba(137,87,229,0.04)';
+  ctx.fillRect(X(B2_START), M.t, X(B2_END)-X(B2_START), pH);
+
+  // Buckling lines
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#e5534b'; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(X(B1_T),M.t); ctx.lineTo(X(B1_T),M.t+pH); ctx.stroke();
+  ctx.strokeStyle = '#8957e5'; ctx.setLineDash([2.5,3.5]);
+  ctx.beginPath(); ctx.moveTo(X(B2_T),M.t); ctx.lineTo(X(B2_T),M.t+pH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Horizontal threshold lines
+  if (hlines) {
+    for (const hl of hlines) {
+      ctx.strokeStyle = hl.color || 'rgba(100,110,130,0.3)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash(hl.dash || [3,3]);
+      ctx.beginPath(); ctx.moveTo(M.l,Y(hl.v)); ctx.lineTo(M.l+pW,Y(hl.v)); ctx.stroke();
+      ctx.setLineDash([]);
+      if (hl.label) {
+        ctx.fillStyle = hl.color || '#5c6370';
+        ctx.font = '9px "JetBrains Mono",monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(hl.label, M.l + pW + 3, Y(hl.v) + 3);
+      }
+    }
+  }
+
+  // Phase annotations for BPX panel
+  if (annotations) {
+    ctx.font = '9px "JetBrains Mono",monospace';
+    ctx.textAlign = 'center';
+    for (const a of annotations) {
+      const px = X(a.t), py = Y(a.v) - 12;
+      // bracket line
+      ctx.strokeStyle = a.color;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(X(a.tStart), Y(a.v)-4);
+      ctx.lineTo(X(a.tStart), Y(a.v)-8);
+      ctx.lineTo(X(a.tEnd), Y(a.v)-8);
+      ctx.lineTo(X(a.tEnd), Y(a.v)-4);
+      ctx.stroke();
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = a.color;
+      ctx.fillText(a.label, (X(a.tStart)+X(a.tEnd))/2, Y(a.v)-12);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Data line — shadow
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 5; ctx.globalAlpha = 0.08;
+  ctx.beginPath();
+  data.forEach((p,i) => { i===0 ? ctx.moveTo(X(p.t),Y(p.v)) : ctx.lineTo(X(p.t),Y(p.v)); });
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Data line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.4; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach((p,i) => { i===0 ? ctx.moveTo(X(p.t),Y(p.v)) : ctx.lineTo(X(p.t),Y(p.v)); });
+  ctx.stroke();
+
+  // Axes
+  ctx.strokeStyle = '#232838'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(M.l,M.t); ctx.lineTo(M.l,M.t+pH); ctx.lineTo(M.l+pW,M.t+pH); ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle = '#4a5060'; ctx.font = '9px "JetBrains Mono",monospace';
+  ctx.textAlign = 'center';
+  for (let t=0; t<=10; t+=2) ctx.fillText(t,X(t),M.t+pH+14);
+  ctx.fillText('t (Gyr)', X(5), M.t+pH+24);
+
+  ctx.textAlign = 'right';
+  for (let i=0; i<=4; i++) {
+    const v = yMin+(yMax-yMin)*i/4;
+    ctx.fillText(v<10 ? v.toFixed(2) : v.toFixed(0), M.l-5, Y(v)+3);
+  }
+
+  // Store for tooltip
+  allCharts.push({c, X, Y, data, pW, pH, M, tMin, tMax, yRange, id});
+}
+
+function drawAll() {
+  allCharts.length = 0;
+
+  draw({ id:'c1', data:dataA2, yRange:[0,0.85], color:'#f0a030' });
+  draw({ id:'c2', data:dataOmega, yRange:[5,50], color:'#4a90e2' });
+  draw({ id:'c3', data:dataBuckle, yRange:[0,0.16], color:'#2dba4e',
+    hlines:[{v:0.06, color:'rgba(100,110,130,0.35)', dash:[3,3], label:'0.06 threshold'}]
+  });
+  draw({ id:'c4', data:dataSigma, yRange:[0.55,0.9], color:'#db61a2' });
+  draw({ id:'c5', data:dataBPX, yRange:[0.4,1.7], color:'#39d353',
+    annotations:[
+      {label:'Phase I: Buckling', t:1.45, v:1.55, tStart:1.30, tEnd:1.58, color:'#e5534b'},
+      {label:'Phase II: Resonant Heating + 2nd Buckle', t:2.4, v:1.55, tStart:1.60, tEnd:3.20, color:'#8957e5'},
+      {label:'Phase III: Orbit Trapping', t:6.5, v:1.55, tStart:3.30, tEnd:9.78, color:'#f0a030'},
+    ]
+  });
+}
+
+drawAll();
+window.addEventListener('resize', drawAll);
+
+// ============================================================
+// TOOLTIP — synced vertical crosshair across all panels
+// ============================================================
+
+const tt = document.getElementById('tt');
+const labels = ['A₂/A₀','Ωp (km/s/kpc)','A_Buckle','σz/σR','A_BPX (kpc)'];
+
+document.querySelectorAll('canvas').forEach((cv, idx) => {
+  cv.addEventListener('mousemove', e => {
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const ch = allCharts[idx];
+    if (!ch) return;
+    const {M, pW, data, tMin, tMax} = ch;
+    if (mx < M.l || mx > M.l+pW) { tt.classList.remove('on'); return; }
+
+    const t = tMin + (mx-M.l)/pW*(tMax-tMin);
+    let best = data[0], bd = Infinity;
+    for (const p of data) { const d=Math.abs(p.t-t); if(d<bd){bd=d;best=p;} }
+
+    let phase='Secular Evolution';
+    if (t<B1_START) phase='Bar Growth';
+    else if (t<B1_END) phase='1st Buckling';
+    else if (t<B2_START) phase='Recovery';
+    else if (t<B2_END) phase='2nd Buckling';
+
+    let bpxPhase = '';
+    if (idx === 4) {
+      if (t>=1.30 && t<1.58) bpxPhase = '<div style="color:#e5534b">BPX Phase I — Buckling kick</div>';
+      else if (t>=1.58 && t<3.20) bpxPhase = '<div style="color:#8957e5">BPX Phase II — Resonant heating</div>';
+      else if (t>=3.20) bpxPhase = '<div style="color:#f0a030">BPX Phase III — Orbit trapping</div>';
+    }
+
+    tt.innerHTML = `<div style="color:var(--accent1)">t = ${best.t.toFixed(2)} Gyr</div>`
+      + `<div>${labels[idx]} = <strong>${best.v.toFixed(4)}</strong></div>`
+      + `<div style="color:var(--text-dim);margin-top:2px">${phase}</div>`
+      + bpxPhase;
+    tt.style.left = (e.clientX+16)+'px';
+    tt.style.top = (e.clientY-14)+'px';
+    tt.classList.add('on');
+  });
+
+  cv.addEventListener('mouseleave', () => tt.classList.remove('on'));
+});
+</script>
+
+</body>
+</html>
