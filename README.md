@@ -1,23 +1,37 @@
 # IITK Astronomy Plotting
 
 Analysis and visualization pipeline for an N-body galaxy simulation, built on
-[pynbody](https://pynbody.github.io/pynbody/). The project studies the
-formation and evolution of a stellar bar in a simulated disc galaxy across
-501 simulation snapshots, tracking bar strength, buckling instability,
-pattern speed, and vertical/radial velocity dispersion over time.
+[pynbody](https://pynbody.github.io/pynbody/). The project has two goals:
+
+1. **Reproduce the diagnostic charts from published bar/buckling-instability
+   papers** (see `pdf/papers/`) — bar strength, buckling strength, pattern
+   speed, and velocity dispersion — computed directly from the simulation's
+   501 snapshots, to check the simulation against known results.
+2. **Generate augmented training data for a CNN bar-detection model.** While
+   rendering the simulation at many viewing angles for the plots above, the
+   rotated/rendered snapshot images doubled as an image dataset (rotated
+   views, multiple viewing angles) intended to train a CNN to classify/detect
+   bars in galaxy images. This half of the project is a **work in progress**
+   feeding into a separate, follow-on project — the CNN training scripts here
+   (`imagegeneration_cnn.py`, `transfer_learning.py`, `predict_bar.py`) are
+   early/exploratory, not a finished model.
 
 ## What this project does
 
-- Loads a time series of N-body simulation snapshots and measures:
+- Loads a time series of N-body simulation snapshots and measures, following
+  the methodology of the reference papers:
   - **Bar strength** (A2/A0 Fourier amplitude)
   - **Buckling strength** and **BPX strength** (out-of-plane bending signatures)
   - **Pattern speed** evolution of the bar
-  - **Radial vs. vertical velocity dispersion** (σ_R vs. σ_z)
+  - **Radial vs. vertical velocity dispersion** (σ_R vs. σ_z), including a
+    second "manual" implementation cross-checked against the paper's exact
+    method
   - Mean vertical height of the disc over time
-- Generates rendered snapshot images and rotated 3D views of the galaxy
-  for visual inspection and animation.
-- Includes a CNN-based image classification experiment for detecting bars
-  in simulated galaxy images.
+- Renders snapshot images and rotated 3D views of the galaxy at many angles —
+  both for visual inspection/animation and as raw material for an augmented
+  image dataset.
+- Includes early CNN image-classification experiments for detecting bars in
+  the rendered images (exploratory, feeding a separate future project).
 
 ## Repository structure
 
