@@ -1,0 +1,4 @@
+Best threshold on validation: 0.66 (balanced acc 0.8867)
+
+TEST @ default 0.50: overall=0.8644 balanced=0.8644 bar-recall=0.8311 no_bar-recall=0.8978
+TEST @ tuned 0.66: overall=0.8711 balanced=0.8711 bar-recall=0.8889 no_bar-recall=0.8533
