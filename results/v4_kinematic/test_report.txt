@@ -1,0 +1,4 @@
+Test loss=0.3401 acc=0.8333 auc=0.9261
+Confusion matrix (positive class = 'no_bar'):
+  TP=193  FP=43
+  FN=32  TN=182

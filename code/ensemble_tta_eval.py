@@ -16,11 +16,11 @@ import numpy as np
 from tensorflow import keras
 
 MODELS = {
-    "seed42(v3)": "models_v3/bar_resnet50.keras",
-    "seed1":      "models_seed1/bar_resnet50.keras",
-    "seed2":      "models_seed2/bar_resnet50.keras",
+    "seed42(v3)": "results/v3_binary/bar_resnet50.keras",
+    "seed1":      "results/v3_binary_seed1/bar_resnet50.keras",
+    "seed2":      "results/v3_binary_seed2/bar_resnet50.keras",
 }
-TEST = "dataset/test"
+TEST = "data/dataset_v3_binary/test"
 IMG = (224, 224)
 
 # load test images once

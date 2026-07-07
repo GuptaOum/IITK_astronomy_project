@@ -37,25 +37,38 @@ Analysis and visualization pipeline for an N-body galaxy simulation, built on
 
 ```
 windowpynbody2/
-├── code/                # All analysis and plotting scripts (Python)
-├── images/
-│   ├── snapshots/       # Rendered face-on snapshots of the simulation (501+ frames)
-│   ├── rotated_views_501/ # Rotated 3D viewing angles of the galaxy
-│   ├── buckling_plots/  # Plots of buckling/bar-strength/dispersion results
-│   ├── cmap_samples/    # Reference charts of matplotlib colormaps used in plotting
-│   └── download.jpg     # Project reference image
-├── pdf/
-│   ├── papers/          # Reference research papers on bar/buckling instabilities
-│   └── buckling_plots/  # PDF exports of buckling analysis (time-series grids, snapshot grids)
-└── extras/               # Supplementary outputs (CSV data, HTML plot, slideshow video)
+├── code/                  # All scripts: physics analysis + CNN pipeline (see tables below)
+├── results/               # Every ML experiment's outputs, chronological
+│   ├── v1_binary/            # run 1: tilts<=60, 76.5% (reports, tilt figure)
+│   ├── v2_binary/            # run 2: tilts<=40, 86.8%
+│   ├── v3_binary/            # run 3: 122 snaps, 86.4% (+TTA/ensemble reports)
+│   ├── v3_binary_seed1/, v3_binary_seed2/   # ensemble members
+│   ├── v4_kinematic/         # velocity-channel experiment (negative result)
+│   ├── regression_resnet50/  # THE FINAL MODEL: 96.0% acc, MAE 0.027
+│   ├── regression_convnext/, regression_effnetv2b0/
+│   └── regression_ensemble/  # final report + pred_vs_true scatter figure
+├── data/                  # rendered datasets (gitignored, regenerable)
+│   ├── dataset_v3_binary/     # 3,050 imgs, train/val/test by snapshot
+│   └── dataset_v1_tilt60/     # historical v1 dataset
+├── gadget_snapshots/      # raw GADGET binaries snapshot_000..501 (gitignored, ~48GB)
+├── images/                # astronomy visualizations (snapshots, rotated views, plots)
+├── pdf/                   # reference papers + analysis PDF exports
+├── extras/                # bar_labels.csv (the CNN label source!) + misc outputs
+└── veny/                  # Python virtualenv (gitignored)
 ```
 
 ## Notes on excluded data
 
-Raw simulation snapshot binaries (`snapshot_000` … `snapshot_501`, tens of GB
-of GADGET-format N-body data) and the local Python virtual environment
-(`veny/`) are excluded from this repository — they are large, regenerable/
-machine-specific, and not needed to review the code or results.
+Raw GADGET snapshots (`gadget_snapshots/`, ~48GB), rendered datasets (`data/`),
+model weights (`*.keras`, `*.weights.h5`), and the virtualenv are gitignored —
+large and regenerable. Weights are published on Hugging Face:
+https://huggingface.co/kjfk/galaxy-bar-detection-resnet50
+
+NOTE: scripts meant to run on an EC2 box (`generate_dataset*.py`,
+`train_*.py`, `ensemble_regression_eval.py`) use the flat home-directory
+layout (snapshots + `dataset/` in cwd). Locally-run analysis scripts use the
+`results/` + `data/` layout above. Legacy physics scripts (buck.py etc.)
+expect the snapshots in their cwd - run them from `gadget_snapshots/`.
 
 ## Key scripts (`code/`)
 
@@ -86,13 +99,31 @@ learning), `analyze_results.py` (accuracy-vs-inclination + decision-threshold
 tuning), `compare_models.py` (same-test-set model comparison),
 `aws_train.ps1` (EC2 training automation).
 
-### Results across three dataset versions
+### Results across all experiments
 
-| Run | Dataset | Test accuracy | AUC |
-|---|---|---|---|
-| v1 | 40 snapshots, tilts 0-60 deg, 1,960 imgs | 76.5% | 0.836 |
-| v2 | 60 snapshots, tilts 0-40 deg, 1,500 imgs | 86.8% | 0.951 |
-| v3 (final) | 122 snapshots, tilts 0-40 deg, 3,050 imgs | 86.4% (87.1% with tuned threshold) | 0.944 |
+| Experiment | Approach | Test accuracy |
+|---|---|---|
+| v1 | binary, 40 snapshots, tilts 0-60 deg | 76.5% |
+| v2 | binary, tilts capped 40 deg (label noise pruned) | 86.8% |
+| v3 | binary, 122 snapshots, 3,050 imgs | 86.4% (AUC 0.944) |
+| v3 + TTA | avg over 8 rotations/flips at inference | 90.2% |
+| v3 3-seed ensemble + TTA | | 91.8% (AUC 0.974) |
+| v4 morpho-kinematic | velocity+dispersion input channels | 83.3% (negative result) |
+| **REGRESSION ResNet50 (final)** | **predict continuous A2/A0, threshold 0.19** | **96.0%, MAE 0.027** |
+
+### The regression breakthrough (86.4% -> 96.0%)
+
+Instead of binary bar/no-bar labels, the final model predicts the *continuous*
+A2/A0 bar strength. This (a) unlocked 60 mid-strength snapshots
+(0.10 < A2/A0 < 0.22) that binary labeling had to discard, (b) cured the
+"boundary blindness" of a classifier that never saw examples near its own
+0.19 threshold, and (c) gave richer supervision per image. Same test set,
+same scoring rule - only the training signal changed. The model doubles as a
+bar-strength *measuring instrument*: MAE 0.027 in A2/A0 units (see
+`results/regression_ensemble/pred_vs_true.png`). Architecture comparison:
+ResNet50 (96.0%) decisively beat ConvNeXt-Tiny (91.6%) and EfficientNetV2-B0
+(84.0%); ensembling diluted the champion, so the final model is the single
+regression ResNet50.
 
 Key findings (see `models_run1/`, `models_run2/`, `models_v3/` for reports,
 per-epoch logs, and figures):

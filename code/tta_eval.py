@@ -14,8 +14,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-MODEL = "models_v3/bar_resnet50.keras"
-TEST = "dataset/test"
+MODEL = "results/v3_binary/bar_resnet50.keras"
+TEST = "data/dataset_v3_binary/test"
 IMG = (224, 224)
 
 model = keras.models.load_model(MODEL)

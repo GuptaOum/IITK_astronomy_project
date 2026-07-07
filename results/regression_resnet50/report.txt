@@ -1,0 +1,2 @@
+resnet50 regression: test MAE = 0.0267 (in A2/A0 units)
+classification via threshold on v3-test subset (450 imgs): acc = 0.9600

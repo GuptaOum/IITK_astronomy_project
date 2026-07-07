@@ -1,0 +1,2 @@
+effnetv2b0 regression: test MAE = 0.0429 (in A2/A0 units)
+classification via threshold on v3-test subset (450 imgs): acc = 0.8400

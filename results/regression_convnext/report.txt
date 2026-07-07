@@ -1,0 +1,2 @@
+convnext_tiny regression: test MAE = 0.0365 (in A2/A0 units)
+classification via threshold on v3-test subset (450 imgs): acc = 0.9156

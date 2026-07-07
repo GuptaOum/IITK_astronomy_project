@@ -16,11 +16,11 @@ import numpy as np
 from tensorflow import keras
 
 IMG_SIZE = (224, 224)
-TEST_DIR = "dataset/test"   # v2 test split
+TEST_DIR = "data/dataset_v3_binary/test"   # v2 test split
 
 MODELS = {
-    "run1 (trained tilt<=60)": "models_run1/bar_resnet50.keras",
-    "run2 (trained tilt<=40)": "models_run2/bar_resnet50.keras",
+    "run1 (trained tilt<=60)": "results/v1_binary/bar_resnet50.keras",
+    "run2 (trained tilt<=40)": "results/v2_binary/bar_resnet50.keras",
 }
 
 # --- load the shared test set once ---
@@ -41,7 +41,7 @@ imgs = np.stack([
 
 # --- leakage check for run1: were any of these snapshots in run1 training? ---
 run1_train = sorted({re.search(r"snapshot_\d+", f).group()
-                     for f in glob.glob("dataset_run1_tilt60/train/*/*.png")})
+                     for f in glob.glob("data/dataset_v1_tilt60/train/*/*.png")})
 leak = [s for s in snaps_in_test if s in run1_train]
 print(f"v2-test snapshots that were in run1 TRAINING data: {leak or 'none'}\n")
 

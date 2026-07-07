@@ -1,0 +1,12 @@
+--- single / +TTA ---
+resnet50                         MAE=0.0267  cls-acc= 96.0%  bar-recall=92.0%
+resnet50 +TTA                    MAE=0.0238  cls-acc= 94.0%  bar-recall=88.0%
+effnetv2b0                       MAE=0.0429  cls-acc= 84.0%  bar-recall=68.0%
+effnetv2b0 +TTA                  MAE=0.0401  cls-acc= 84.4%  bar-recall=68.9%
+convnext_tiny                    MAE=0.0365  cls-acc= 91.6%  bar-recall=83.1%
+convnext_tiny +TTA               MAE=0.0347  cls-acc= 92.7%  bar-recall=85.3%
+--- ensembles ---
+ens3 (all)                       MAE=0.0316  cls-acc= 90.9%  bar-recall=81.8%
+ens3 +TTA                        MAE=0.0306  cls-acc= 90.2%  bar-recall=80.4%
+ens2 (rn50+convnext)             MAE=0.0289  cls-acc= 94.9%  bar-recall=89.8%
+ens2 +TTA                        MAE=0.0277  cls-acc= 93.6%  bar-recall=87.1%

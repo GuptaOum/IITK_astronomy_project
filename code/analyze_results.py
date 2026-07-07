@@ -24,8 +24,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from tensorflow import keras
 
-MODEL_PATH = "models_v3/bar_resnet50.keras"
-DATA_DIR = "dataset"
+MODEL_PATH = "results/v3_binary/bar_resnet50.keras"
+DATA_DIR = "data/dataset_v3_binary"
 OUT_DIR = "models_v3"
 IMG_SIZE = (224, 224)
 

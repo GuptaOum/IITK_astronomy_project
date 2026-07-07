@@ -23,9 +23,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from tensorflow import keras
 
-MODELS = ["models_v3/bar_resnet50.keras",
-          "models_seed1/bar_resnet50.keras",
-          "models_seed2/bar_resnet50.keras"]
+MODELS = ["results/v3_binary/bar_resnet50.keras",
+          "results/v3_binary_seed1/bar_resnet50.keras",
+          "results/v3_binary_seed2/bar_resnet50.keras"]
 IMG_SIZE = 224
 WIDTH = 40.0            # kpc, must match training
 VMIN, VMAX = 1e7, 1e9   # density clip, must match training
