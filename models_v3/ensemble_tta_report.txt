@@ -1,0 +1,22 @@
+Ensemble + TTA evaluation on v3 test set (450 images, 18 unseen snapshots)
+=========================================================================
+Models: seed42 (= the v3 model), seed1, seed2 — same v3 dataset, different
+random seeds. TTA = average prediction over 8 rotations/flips per image.
+
+--- single model, single image ---
+seed42(v3)                         acc= 86.4%  auc=0.944  bar-recall=83.1%
+seed1                              acc= 85.6%  auc=0.944  bar-recall=85.3%
+seed2                              acc= 84.2%  auc=0.947  bar-recall=92.4%
+
+--- single model + TTA ---
+seed42(v3) +TTA                    acc= 90.2%  auc=0.968  bar-recall=85.3%
+seed1 +TTA                         acc= 92.4%  auc=0.976  bar-recall=92.4%
+seed2 +TTA                         acc= 87.3%  auc=0.967  bar-recall=95.1%
+
+--- ENSEMBLE (avg of 3 models) ---
+ensemble, single image             acc= 88.4%  auc=0.949  bar-recall=88.4%
+ensemble + TTA                     acc= 91.8%  auc=0.974  bar-recall=92.0%
+
+HEADLINE: ensemble + TTA = 91.8% accuracy, AUC 0.974 (most robust).
+Arc: v3 single-image 86.4% -> ensemble+TTA 91.8%, via standard techniques
+(test-time augmentation + multi-seed ensembling), no new data, no leakage.

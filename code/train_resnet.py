@@ -29,11 +29,14 @@ from tensorflow.keras import layers
 # -------------------------------
 # CONFIG
 # -------------------------------
+import sys
 DATA_DIR = "dataset"
-MODEL_DIR = "models"
+# Optional CLI: python train_resnet.py <seed> -> writes to models_seed<seed>/
+SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
+MODEL_DIR = f"models_seed{SEED}" if len(sys.argv) > 1 else "models"
 IMG_SIZE = (224, 224)
 BATCH = 32
-SEED = 42
+tf.keras.utils.set_random_seed(SEED)
 
 EPOCHS_HEAD = 8         # phase 1
 EPOCHS_FINETUNE = 18    # phase 2 (run1 was still improving at epoch 10)
