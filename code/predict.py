@@ -1,19 +1,17 @@
 """
-End-to-end bar prediction with the final 3-seed ensemble + TTA (the 91.8% model).
+Bar prediction with the FINAL model: ResNet50 A2/A0 regression (96.0% acc,
+MAE 0.027). Outputs the predicted bar STRENGTH plus a bar / no-bar verdict
+(threshold A2/A0 >= 0.19).
 
-Give it EITHER a raw GADGET snapshot OR an already-rendered PNG:
+Give it EITHER a raw GADGET snapshot OR a rendered grayscale density PNG:
 
-    python code/predict.py snapshot_501
-    python code/predict.py dataset/test/bar/snapshot_474_X00_Y00.png
-    python code/predict.py snapshot_490 snapshot_120   # several at once
+    python code/predict.py gadget_snapshots/snapshot_501
+    python code/predict.py data/dataset_v3_binary/test/bar/snapshot_474_X00_Y00.png
+    python code/predict.py gadget_snapshots/snapshot_490 gadget_snapshots/snapshot_120
 
-For a raw snapshot it renders the density image exactly the way the training
-data was made (same alignment, same 1e7-1e9 log clip, same grayscale) so there
-is no training/serving skew. Then it runs the full pipeline:
-  3 models (seed42/1/2)  x  8 TTA views (rotations+flips)  = 24 predictions,
-averaged into one bar / no-bar decision with a confidence.
-
-Output class convention: 0 = bar, 1 = no_bar (alphabetical, as trained).
+For a raw snapshot it renders the density image with the exact training
+recipe (no training/serving skew). Prediction averages 8 TTA views
+(rotations/flips) for a steadier strength estimate.
 Run from the windowpynbody2 folder.
 """
 import sys, os, tempfile
@@ -22,16 +20,32 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from tensorflow import keras
+from tensorflow.keras import layers
 
-MODELS = ["results/v3_binary/bar_resnet50.keras",
-          "results/v3_binary_seed1/bar_resnet50.keras",
-          "results/v3_binary_seed2/bar_resnet50.keras"]
+WEIGHTS = "results/regression_resnet50/model.weights.h5"
 IMG_SIZE = 224
 WIDTH = 40.0            # kpc, must match training
 VMIN, VMAX = 1e7, 1e9   # density clip, must match training
+A2A0_SCALE = 0.30
+CLS_THR = 0.19
 
 
-# ---- render a raw snapshot into the exact training image format ----
+def build_model():
+    """Rebuild the training topology (full .keras save hits a Keras bug)."""
+    base = keras.applications.ResNet50(weights=None, include_top=False,
+                                       input_shape=(IMG_SIZE, IMG_SIZE, 3))
+    inputs = keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
+    x = keras.Sequential([layers.Identity()])(inputs)  # augment placeholder
+    x = keras.applications.resnet50.preprocess_input(x)
+    x = base(x, training=False)
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dropout(0.3)(x)
+    out = layers.Dense(1, activation="sigmoid")(x)
+    m = keras.Model(inputs, out)
+    m.load_weights(WEIGHTS)
+    return m
+
+
 def render_snapshot_to_png(snap_path, out_png):
     import pynbody
     import pynbody.analysis.halo as halo
@@ -50,20 +64,13 @@ def render_snapshot_to_png(snap_path, out_png):
 
 
 def load_image(path):
-    """Load a PNG the same way training/eval did -> (1,224,224,3) float 0-255.
-
-    Safety check: the model was trained on GRAYSCALE density images (all 3
-    channels equal). A colored input (e.g. a berlin/viridis colormap render)
-    encodes density in a way the model never saw -> unreliable predictions.
-    """
     arr = keras.utils.img_to_array(
         keras.utils.load_img(path, color_mode="rgb", target_size=(IMG_SIZE, IMG_SIZE)))
-    max_channel_spread = np.abs(arr.max(axis=-1) - arr.min(axis=-1)).max()
-    if max_channel_spread > 2:   # tolerate tiny PNG compression artifacts
+    spread = np.abs(arr.max(axis=-1) - arr.min(axis=-1)).max()
+    if spread > 2:
         print(f"  WARNING: '{os.path.basename(path)}' looks COLORED "
-              f"(channel spread {max_channel_spread:.0f}/255). The model was "
-              f"trained on grayscale density images - this prediction is "
-              f"UNRELIABLE. Re-render the snapshot with predict.py instead.")
+              f"(channel spread {spread:.0f}/255) - the model was trained on "
+              f"grayscale density images; this prediction is UNRELIABLE.")
     return arr[None, ...]
 
 
@@ -72,36 +79,25 @@ def tta_views(x):
     for k in range(4):
         r = np.rot90(x, k, axes=(1, 2))
         out.append(r); out.append(r[:, :, ::-1, :])
-    return np.concatenate(out, axis=0)   # (8,224,224,3)
+    return np.concatenate(out, axis=0)
 
 
 def main(paths):
-    print("Loading 3 ensemble models...")
-    models = [keras.models.load_model(m) for m in MODELS]
-
+    print("Loading final regression model...")
+    model = build_model()
     for path in paths:
-        # get a PNG: use directly if already an image, else render the snapshot
         if path.lower().endswith(".png"):
-            png = path
-            tmp = None
+            png, tmp = path, None
         else:
             tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
             print(f"Rendering {path} ...")
             render_snapshot_to_png(path, tmp)
             png = tmp
-
-        views = tta_views(load_image(png))            # 8 augmented views
-        # 3 models x 8 views -> average of 24 probabilities of class "no_bar"
-        probs = [m.predict(views, batch_size=8, verbose=0).ravel() for m in models]
-        p_nobar = float(np.mean(probs))
-
-        if p_nobar < 0.5:
-            verdict, conf = "BAR", 1 - p_nobar
-        else:
-            verdict, conf = "NO BAR", p_nobar
+        views = tta_views(load_image(png))
+        a2a0 = float(np.mean(model.predict(views, batch_size=8, verbose=0))) * A2A0_SCALE
+        verdict = "BAR" if a2a0 >= CLS_THR else "NO BAR"
         print(f"{os.path.basename(path):40s} -> {verdict:7s}  "
-              f"(confidence {conf*100:.1f}%,  p_nobar={p_nobar:.3f})")
-
+              f"(predicted bar strength A2/A0 = {a2a0:.3f}, threshold {CLS_THR})")
         if tmp:
             os.unlink(tmp)
 
