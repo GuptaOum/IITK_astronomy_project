@@ -1,0 +1,9 @@
+Regression ResNet50 on split 'train' (3200 imgs):
+classification acc = 91.3%  bar-recall = 93.8%  MAE = 0.0246
+
+per-tilt:
+  tilt  0: acc= 98.4%  MAE=0.0148  n=128
+  tilt 10: acc= 93.5%  MAE=0.0167  n=384
+  tilt 20: acc= 92.5%  MAE=0.0199  n=640
+  tilt 30: acc= 90.7%  MAE=0.0254  n=896
+  tilt 40: acc= 89.6%  MAE=0.0302  n=1152
