@@ -1,0 +1,9 @@
+Regression ResNet50 on v3 test (450 imgs):
+classification acc = 96.0%  bar-recall = 92.0%  MAE = 0.0217
+
+per-tilt:
+  tilt  0: acc=100.0%  MAE=0.0140  n=18
+  tilt 10: acc= 98.1%  MAE=0.0167  n=54
+  tilt 20: acc= 97.8%  MAE=0.0191  n=90
+  tilt 30: acc= 99.2%  MAE=0.0192  n=126
+  tilt 40: acc= 91.4%  MAE=0.0277  n=162
