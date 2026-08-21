@@ -1,7 +1,6 @@
 veny/
 gadget_snapshots/
 snapshot_[0-9][0-9][0-9]
-.claude/
 __pycache__/
 *.pyc
 *.keras
