@@ -24,10 +24,16 @@ each fixing the previous one's weakness:
 ±0.02 (MAE 0.0217).** Verified no overfitting (train MAE = test MAE).
 
 **Why regression won (+9.6 pts):** predicting the continuous A2/A0 value instead
-of a bar/no-bar label (a) unlocked 60 "mid-strength" snapshots that binary
-labeling had to throw away, (b) cured the classifier's blindness around its own
-decision threshold, (c) gave richer supervision per image. Same test set, only
-the training signal changed.
+of a bar/no-bar label cured the classifier's blindness around its own decision
+threshold and gave richer supervision per image. Same test set, only the
+training signal changed.
+
+**Ablation — what actually caused it?** We retrained the regression model on the
+*old v3 data only* (no extra images): it still scored **95.6%**, vs 96.0% with
+the 1,500 extra mid-strength images. So the **reframing is worth ~+9.2 points on
+its own**; the extra data added ~+0.4 (within noise). The lesson: *how you pose
+the question mattered far more than how much data we added.*
+(`figures/15_ablation_attribution.png`)
 
 ---
 
@@ -90,6 +96,14 @@ the training signal changed.
 ---
 
 ## Where everything is hosted
+
+### 📊 Figures — `figures/` (15 graphs, also on GitHub)
+The 4 standard ones to show: **01** loss curves (healthy training) · **04**
+confusion matrix · **05** ROC curve (AUC 0.981) · **08** predicted-vs-true.
+The 3 that make this project distinctive: **11** results ladder · **13** bar
+formation across simulation time (CNN vs physics) · **15** ablation attribution.
+Regenerate 01–12 anytime with `python code/make_all_graphs.py`; 13–14 need the
+EC2 box (raw snapshots).
 
 ### 💻 Local — `E:\IIT KNP PROJ\windowpynbody2\`
 - `results/regression_resnet50/` — **the final model** (`model.weights.h5`) + reports
